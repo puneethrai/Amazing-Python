@@ -12,6 +12,10 @@
     <OutputPath>.</OutputPath>
     <Name>Crawler</Name>
     <RootNamespace>Crawler</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments />
+    <InterpreterPath />
+    <InterpreterArguments>Crawler.py -u facebook.com -r 1 -m 100 -c text/html,application/xhtml+xml</InterpreterArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

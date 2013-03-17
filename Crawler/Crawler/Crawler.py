@@ -1,13 +1,21 @@
+"""
+Crawler:A crawler is a program that starts with a url on the web (ex: http://python.org),
+fetches the web-page corresponding to that url, and parses all the links on that page into
+a repository of links. Next,it fetches the contents of any of the url from the repository 
+just created,parses the links from this new content into the repository and continues this 
+process for all links in the repository until stopped or after a given number of links are fetched.
+
+Usage:Crawler.py -u python.org -r 1 -m 100 -c text/html,application/xhtml+xml
+"""
 import os
 import sys
-import Queue
 import urllib
 import httplib
 import urllib2
 
 
-from optparse import OptionParser, SUPPRESS_HELP
-from bs4 import BeautifulSoup, SoupStrainer
+from optparse import OptionParser
+from bs4 import BeautifulSoup
 
 class Crawler:
     NOTVALID = -1
@@ -15,7 +23,8 @@ class Crawler:
     def __init__(self,URL,maxLinks = INFINITE,retries = 1,validContentTypes = ("text/html", "application/xhtml+xml")):
         """
         Objective   :   Constructor
-        Takes       :   "URL"- URL to fetch,"maxLinks" - maxLinks to be added to repo,"retries" - No of retries to connect to the server
+        Takes       :   "URL"- URL to fetch,"maxLinks" - maxLinks to be added to repo,
+                        "retries" - No of retries to connect to the server ,"validContentTypes" -Content type filter
         Returns     :   None
         """
         self.URL = URL
@@ -48,7 +57,8 @@ class Crawler:
         Takes       :   None
         Returns     :   link
         """
-        if len(self.repo) == 0:
+        if len(self.repo) == self.curIndex:
+            self.terminate = True           #We have reached end of POP operation so terminate
             return None
         link = self.repo[self.curIndex]
         self.curIndex +=1
@@ -58,7 +68,7 @@ class Crawler:
         """
         Objective   :   Gets the root link i.e., https://www.python.org/download to www.python.org 
         Takes       :   None
-        Returns     :   link
+        Returns     :   URL
         """
         if url.startswith("http://"):
             return "http://" + url[7:].split("/")[0]
@@ -94,7 +104,7 @@ class Crawler:
         """
         if self.terminate:
             return
-        links = BeautifulSoup(html) 
+        links = BeautifulSoup(html) #parses HTML page to tag
         for link in links.findAll("a"):
             if link.get("href"):
                 self.__push__(self.GetCompleteURL(baseURL,link["href"]))
@@ -119,9 +129,11 @@ class Crawler:
         reqCount = 0
         while True:
             try:
+                #Conects to webServer & retreives the page content
                 req = urllib2.Request(URL)
                 reqContent = urllib2.urlopen(req)
                 contentType = reqContent.headers.get('content-type')
+                #Applying Content Type filter
                 if self.IsValidContentType(contentType):
                     return reqContent
                 else:
@@ -129,6 +141,7 @@ class Crawler:
             except (urllib2.URLError, urllib2.HTTPError, httplib.InvalidURL), e:
                 reqCount += 1
                 if(reqCount >= self.retries):
+                    print "Max retries received for URL:%s closing connection"%(URL)
                     return None
         
 
@@ -169,27 +182,89 @@ class Crawler:
         Returns     :   length of repo of type int
         """
         return len(self.repo)
-            
 
-def main():
+    def __exit__(self):
+        """
+        Objective   :   Destructor
+        Takes       :   None
+        Returns     :   length of repo of type int
+        """
+        this.__del__()
+    def __del__(self):
+        """
+        Objective   :   Destructor
+        Takes       :   None
+        Returns     :   None
+        """
+        del self.repo
+        del self.URL
+        del self.maxLinks
+        del self.retries
+        self.terminate = True
+        del self.curIndex
+        del self.validContentTypes
+        
+
+
+def main(args):
     """
     Objective   :   Main execution of program
     Takes       :   None
     Returns     :   None
     """
-    CrawlingObj = Crawler("http://blah")
+    CrawlingObj = Crawler(args.url,args.maxCount,args.retries,args.validContentTypes)
     try:
         CrawlingObj.Crawl()
     except (KeyboardInterrupt, SystemExit):
+        print "KeyBoard Interupt/System ShutDown recevied"
         CrawlingObj.StopCrawling()
     finally:
-        repo =  CrawlingObj.GetRepo()
-        count = 1
-        for link in repo:
-            print "%d.\t%s"%(count, link)
-            count += 1
+        print "Total Repo generated:%d"  %(CrawlingObj.TotalRepo())
+        print "Do you want to print the repo?[y/n]"
+        choice = raw_input()
+        choice.lower()
+        if(choice == "y"):
+            repo =  CrawlingObj.GetRepo()
+            count = 1
+            for link in repo:
+                print "%d>\t%s"%(count, link)
+                count += 1
+        del CrawlingObj
+        print "Press any key to exit"
         raw_input()
 
 
 if __name__ == '__main__':
-    main()
+    """
+    Objective   :   Program execution starts here ,for command line provide:
+                    python Crawler.py -u www.facebook.com -r 1 -m 100 -c text/html,application/xhtml+xml
+    Takes       :   sys.args
+    Returns     :   None
+    """
+    parser = OptionParser()
+    parser.add_option("-u", "--url",action="store", dest="url",
+                  help="URL to crawl")
+    parser.add_option("-m", "--max", action="store", dest="maxCount", default=10,
+                  help="Max crawl to be erformed",type = 'int')
+    parser.add_option("-r", "--retries",
+                  action="store", dest="retries", default=1,
+                  help="Max retries to be performed before tearing down the connection", type = 'int')
+    parser.add_option("-c", "--contenttype",
+                  action="store", dest="validContentTypes", default="'text/html,application/xhtml+xml'",
+                  help="filter to be applied on ContentType put ',' to append multiple filters")
+    options, args = parser.parse_args(sys.argv)
+    if not options.url:
+        print "Please provide a URL eg:http://www.python.org"
+        options.url = raw_input()
+        if not options.url:
+            print "No URL provided , Crawling using default URL:%s"%("http://www.python.org")
+            options.url = "http://www.python.org"
+    if not options.url.startswith("http://") :
+        if options.url.startswith("https://"):
+            pass
+        options.url = "http://" + options.url;
+    filter = options.validContentTypes 
+    filter = filter.split(',')
+    options.validContentTypes = filter
+    print "Crawling the site:%s with filter:%s"%(options.url,options.validContentTypes)
+    main(options)
