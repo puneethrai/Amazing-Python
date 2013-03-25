@@ -15,4 +15,4 @@ in the repository until stopped or after a given number of links are fetched.
 	2)  Usage:Crawler.py -u python.org -r 1 -m 100 -c text/html,application/xhtml+xml
 
 	Status:
-	image:https://travis-ci.org/puneethrai/Amazing-Python.png?branch=master["Build Status", link="https://travis-ci.org/puneethrai/Amazing-Python"]
+	[![Build Status](https://travis-ci.org/puneethrai/Amazing-Python.png?branch=master)](https://travis-ci.org/puneethrai/Amazing-Python)
