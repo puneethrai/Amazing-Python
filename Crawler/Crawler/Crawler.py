@@ -224,7 +224,7 @@ def main(args):
     finally:
         print "Total Repo generated:%d"  %(CrawlingObj.TotalRepo())
         print "Do you want to print the repo?[y/n]"
-        choice = raw_input()
+        choice = args.choice
         choice.lower()
         if(choice == "y"):
             repo =  CrawlingObj.GetRepo()
@@ -233,8 +233,8 @@ def main(args):
                 print "%d>\t%s"%(count, link)
                 count += 1
         del CrawlingObj
-        print "Press any key to exit"
-        raw_input()
+        #print "Press any key to exit"
+        #raw_input()
 
 
 if __name__ == '__main__':
@@ -255,6 +255,8 @@ if __name__ == '__main__':
     parser.add_option("-c", "--contenttype",
                   action="store", dest="validContentTypes", default="'text/html,application/xhtml+xml'",
                   help="filter to be applied on ContentType put ',' to append multiple filters")
+    parser.add_option("-p", "--print", action="store", dest="choice", default="y",
+                  help="Print generated repo")
     options, args = parser.parse_args(sys.argv)
     if not options.url:
         print "Please provide a URL eg:http://www.python.org"

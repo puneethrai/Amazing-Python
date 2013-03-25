@@ -6,4 +6,4 @@ install:
   - pip install beautifulsoup4
 # command to run tests, e.g. python setup.py test
 script:    
-  - python Crawler/Crawler/Crawler.py -u http://www.python.org
+  - python Crawler/Crawler/Crawler.py -u http://www.python.org -c y
